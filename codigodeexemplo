@@ -1,0 +1,62 @@
+import tensorflow as tf
+from tensorflow import keras
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Carregar Fashion MNIST dataset
+fashion_mnist = keras.datasets.fashion_mnist
+(train_images, train_labels), (test_images, test_labels) = fashion_mnist.load_data()
+
+# Normalizar os valores dos pixels para o intervalo [0, 1]
+train_images = train_images / 255.0
+test_images = test_images / 255.0
+
+# Definir nomes das classes
+class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
+               'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
+
+# Construir o modelo
+model = keras.Sequential([
+    keras.layers.Reshape((28, 28, 1), input_shape=(28, 28)),  # Adiciona uma dimensão para o canal (para compatibilidade com convolução)
+    keras.layers.Conv2D(32, (3, 3), activation='relu'),
+    keras.layers.MaxPooling2D((2, 2)),
+    keras.layers.Conv2D(64, (3, 3), activation='relu'),
+    keras.layers.MaxPooling2D((2, 2)),
+    keras.layers.Flatten(),
+    keras.layers.Dense(128, activation='relu'),
+    keras.layers.Dense(10, activation='softmax')
+])
+
+# Compilar o modelo
+model.compile(optimizer='adam',
+              loss='sparse_categorical_crossentropy',
+              metrics=['accuracy'])
+
+# Treinar o modelo
+model.fit(train_images, train_labels, epochs=5)
+
+# Avaliar a acurácia no conjunto de teste
+test_loss, test_acc = model.evaluate(test_images, test_labels, verbose=2)
+print('\nTest accuracy:', test_acc)
+
+# Visualizar camadas convolutivas e densa
+for layer in model.layers:
+    if isinstance(layer, keras.layers.Conv2D):
+        filters, biases = layer.get_weights()
+        print(f'Conv2D Layer: {layer.name}, Filters shape: {filters.shape}')
+    elif isinstance(layer, keras.layers.MaxPooling2D):
+        print(f'MaxPooling2D Layer: {layer.name}')
+    elif isinstance(layer, keras.layers.Dense):
+        weights, biases = layer.get_weights()
+        print(f'Dense Layer: {layer.name}, Weights shape: {weights.shape}')
+
+# Plotar o modelo
+keras.utils.plot_model(model, to_file='model.png', show_shapes=True)
+
+# Exibir uma imagem de exemplo
+plt.figure()
+plt.imshow(test_images[0], cmap=plt.cm.binary)
+plt.colorbar()
+plt.grid(False)
+plt.xlabel(class_names[test_labels[0]])
+plt.show()
